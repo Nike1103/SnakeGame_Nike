@@ -12,7 +12,7 @@
             {
                 Update();
                 Render();
-                System.Threading.Thread.Sleep(200);
+                System.Threading.Thread.Sleep(150);
             }
         }
 
