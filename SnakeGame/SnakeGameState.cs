@@ -1,60 +1,91 @@
-﻿using System;
-using Shared; // подключаем ConsoleRenderer из папки Shared
-
-namespace SnakeGame
+﻿public class SnakeGameState : BaseGameState
 {
-    public class SnakeGameState : GameState
+    public SnakeGameLogic Logic { get; private set; }
+    private ConsoleRenderer _renderer;
+    private int _width;
+    private int _height;
+
+    public SnakeGameState(int width = 40, int height = 20)
     {
-        private int x = 10;
-        private int y = 10;
-        private InputHandler inputHandler;
-        private ConsoleRenderer renderer;
+        _width = width;
+        _height = height;
+        _renderer = new ConsoleRenderer(width, height);
+        Logic = new SnakeGameLogic(width, height);
+    }
 
-        public SnakeGameState()
+    public override void Enter()
+    {
+        Logic.Reset();
+    }
+
+    public override void Update()
+    {
+        // Обрабатываем ВСЕ доступные клавиши
+        while (Console.KeyAvailable)
         {
-            inputHandler = new InputHandler(Direction.Right);
+            var key = Console.ReadKey(true).Key;
 
-            // создаём рендерер, передаём палитру цветов
-            renderer = new ConsoleRenderer(new ConsoleColor[]
+            // Обрабатываем только стрелки
+            switch (key)
             {
-                ConsoleColor.White,   // индекс 0
-                ConsoleColor.Green,   // индекс 1
-                ConsoleColor.Red,     // индекс 2
-                ConsoleColor.Yellow   // индекс 3
-            });
-
-            renderer.bgColor = ConsoleColor.Black;
-        }
-
-        public override void Update()
-        {
-            inputHandler.UpdateDirection();
-
-            switch (inputHandler.CurrentDirection)
-            {
-                case Direction.Up:
-                    y--;
+                case ConsoleKey.UpArrow when Logic.CurrentDirection != Direction.Down:
+                    Logic.CurrentDirection = Direction.Up;
                     break;
-                case Direction.Down:
-                    y++;
+                case ConsoleKey.DownArrow when Logic.CurrentDirection != Direction.Up:
+                    Logic.CurrentDirection = Direction.Down;
                     break;
-                case Direction.Left:
-                    x--;
+                case ConsoleKey.LeftArrow when Logic.CurrentDirection != Direction.Right:
+                    Logic.CurrentDirection = Direction.Left;
                     break;
-                case Direction.Right:
-                    x++;
+                case ConsoleKey.RightArrow when Logic.CurrentDirection != Direction.Left:
+                    Logic.CurrentDirection = Direction.Right;
+                    break;
+                case ConsoleKey.Escape:
+                    Environment.Exit(0);
                     break;
             }
         }
 
-        public override void Render()
+        Logic.Update();
+        Render();
+    }
+
+    private void Render()
+    {
+        _renderer.Clear();
+        _renderer.DrawBorder();
+
+        // Рисуем змейку
+        foreach (var segment in Logic.Snake)
         {
-            renderer.Clear();
+            _renderer.Draw(segment);
+        }
 
-            // рисуем голову змейки (белый квадрат "■")
-            renderer.SetPixel(x, y, '■', 0);
+        // Рисуем еду
+        _renderer.Draw(Logic.Food);
 
-            renderer.Render();
+        // Рисуем счет
+        _renderer.DrawText(2, _height, $"Счет: {Logic.Score}/{Logic.FoodToWin}", ConsoleColor.Yellow);
+        _renderer.DrawText(20, _height, $"Скорость: {Logic.Speed}", ConsoleColor.Cyan);
+
+        if (Logic.GameOver)
+        {
+            _renderer.DrawText(_width / 2 - 5, _height / 2, "GAME OVER!", ConsoleColor.Red);
+            _renderer.DrawText(_width / 2 - 8, _height / 2 + 1, "Нажмите любую клавишу", ConsoleColor.White);
+        }
+        else if (Logic.LevelComplete)
+        {
+            _renderer.DrawText(_width / 2 - 6, _height / 2, "УРОВЕНЬ ПРОЙДЕН!", ConsoleColor.Green);
+            _renderer.DrawText(_width / 2 - 8, _height / 2 + 1, "Нажмите любую клавишу", ConsoleColor.White);
+        }
+    }
+
+    public override void Exit()
+    {
+        // Очищаем буфер ввода
+        while (Console.KeyAvailable)
+        {
+            Console.ReadKey(true);
         }
     }
 }

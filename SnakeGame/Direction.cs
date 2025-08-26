@@ -1,10 +1,8 @@
-﻿namespace SnakeGame
+﻿public enum Direction
 {
-    public enum Direction
-    {
-        Up,
-        Down,
-        Left,
-        Right
-    }
+    Up,
+    Down,
+    Left,
+    Right,
+    None
 }
